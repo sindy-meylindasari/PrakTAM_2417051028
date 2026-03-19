@@ -1,5 +1,13 @@
 package com.example.praktam_2417051028
 
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -63,44 +71,57 @@ fun MemoryListScreen() {
 @Composable
 fun MemoryItem(memory: Memory) {
 
+    var isFavorite by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
 
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
-            Image(
-                painter = painterResource(id = memory.imageRes),
-                contentDescription = memory.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
+            // 🔥 BAGIAN GAMBAR + LOVE
+            Box {
+
+                Image(
+                    painter = painterResource(id = memory.imageRes),
+                    contentDescription = memory.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+
+                IconButton(
+                    onClick = { isFavorite = !isFavorite },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite)
+                            Icons.Filled.Favorite
+                        else
+                            Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFavorite)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = memory.title,
-                fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Text(
-                text = memory.description
-            )
-
-            Text(
-                text = memory.date
-            )
+            Text(text = memory.description)
+            Text(text = memory.date)
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Button(
-                onClick = { }
-            ) {
+            Button(onClick = { }) {
                 Text("Lihat Kenangan")
             }
         }
