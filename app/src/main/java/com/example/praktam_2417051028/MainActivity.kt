@@ -1,5 +1,19 @@
 package com.example.praktam_2417051028
 
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Box
@@ -41,59 +55,72 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MemoryListScreen() {
-
     val memories = MemorySource.dummyMemory
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        Text(
-            text = "LifeReplay Memories",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        //  HEADER + LAZY ROW
+        item {
+            Text(
+                text = "Rekomendasi",
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(modifier = Modifier.height(20.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(memories) { memory ->
+                    MemoryRowItem(memory)
+                }
+            }
 
-        memories.forEach { memory ->
+            Spacer(modifier = Modifier.height(16.dp))
 
+            Text(
+                text = "Semua Kenangan",
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        //  LIST UTAMA
+        items(memories) { memory ->
             MemoryItem(memory)
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
 fun MemoryItem(memory: Memory) {
-
     var isFavorite by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(8.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
+        Column {
 
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            // 🔥 BAGIAN GAMBAR + LOVE
             Box {
-
                 Image(
                     painter = painterResource(id = memory.imageRes),
                     contentDescription = memory.title,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(200.dp),
+                    contentScale = ContentScale.Crop
                 )
 
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite)
@@ -101,28 +128,48 @@ fun MemoryItem(memory: Memory) {
                         else
                             Icons.Outlined.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (isFavorite)
-                            MaterialTheme.colorScheme.error
-                        else
-                            MaterialTheme.colorScheme.onSurface
+                        tint = if (isFavorite) Color.Red else Color.White
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(memory.title, fontWeight = FontWeight.Bold)
+                Text(memory.date) // 🔥 tambahan dari data kamu
+                Text(memory.description)
 
-            Text(
-                text = memory.title,
-                style = MaterialTheme.typography.titleMedium
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Lihat Detail")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MemoryRowItem(memory: Memory) {
+    Card(
+        modifier = Modifier.width(140.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column {
+            Image(
+                painter = painterResource(id = memory.imageRes),
+                contentDescription = memory.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentScale = ContentScale.Crop
             )
 
-            Text(text = memory.description)
-            Text(text = memory.date)
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Button(onClick = { }) {
-                Text("Lihat Kenangan")
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(memory.title, fontWeight = FontWeight.Bold)
+                Text(memory.date)
             }
         }
     }
