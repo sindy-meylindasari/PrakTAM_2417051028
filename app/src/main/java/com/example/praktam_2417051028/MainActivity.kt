@@ -1,47 +1,31 @@
 package com.example.praktam_2417051028
 
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.praktam_2417051028.lifereplay.Memory
 import com.example.praktam_2417051028.lifereplay.MemorySource
 import com.example.praktam_2417051028.ui.theme.PrakTAM_2417051028Theme
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -60,17 +44,20 @@ fun MemoryListScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        //  HEADER + LAZY ROW
         item {
             Text(
                 text = "Rekomendasi",
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -84,11 +71,10 @@ fun MemoryListScreen() {
 
             Text(
                 text = "Semua Kenangan",
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleLarge
             )
         }
 
-        //  LIST UTAMA
         items(memories) { memory ->
             MemoryItem(memory)
         }
@@ -102,7 +88,10 @@ fun MemoryItem(memory: Memory) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column {
 
@@ -128,15 +117,31 @@ fun MemoryItem(memory: Memory) {
                         else
                             Icons.Outlined.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (isFavorite) Color.Red else Color.White
+                        tint = if (isFavorite)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(memory.title, fontWeight = FontWeight.Bold)
-                Text(memory.date) // 🔥 tambahan dari data kamu
-                Text(memory.description)
+
+                Text(
+                    text = memory.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Text(
+                    text = memory.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = memory.description,
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -155,7 +160,10 @@ fun MemoryItem(memory: Memory) {
 fun MemoryRowItem(memory: Memory) {
     Card(
         modifier = Modifier.width(140.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column {
             Image(
@@ -168,8 +176,17 @@ fun MemoryRowItem(memory: Memory) {
             )
 
             Column(modifier = Modifier.padding(8.dp)) {
-                Text(memory.title, fontWeight = FontWeight.Bold)
-                Text(memory.date)
+
+                Text(
+                    text = memory.title,
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                Text(
+                    text = memory.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -177,7 +194,7 @@ fun MemoryRowItem(memory: Memory) {
 
 @Preview(showBackground = true)
 @Composable
-fun MemoryPreview() {
+fun PreviewApp() {
     PrakTAM_2417051028Theme {
         MemoryListScreen()
     }
