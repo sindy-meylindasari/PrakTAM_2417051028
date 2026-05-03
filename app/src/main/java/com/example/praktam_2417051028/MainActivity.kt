@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -20,18 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.praktam_2417051028.lifereplay.Memory
 import com.example.praktam_2417051028.lifereplay.MemorySource
 import com.example.praktam_2417051028.ui.theme.PrakTAM_2417051028Theme
@@ -39,79 +34,152 @@ import com.example.praktam_2417051028.ui.theme.PrakTAM_2417051028Theme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             PrakTAM_2417051028Theme {
-                MemoryListScreen()
+                AppNavigation()
             }
         }
     }
 }
 
 @Composable
-fun MemoryListScreen() {
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "list") {
+
+        composable("list") {
+            MemoryListScreen(navController)
+        }
+
+        composable("detail/{title}/{desc}/{date}/{image}") { backStackEntry ->
+            val title = backStackEntry.arguments?.getString("title") ?: ""
+            val desc = backStackEntry.arguments?.getString("desc") ?: ""
+            val date = backStackEntry.arguments?.getString("date") ?: ""
+            val image = backStackEntry.arguments?.getString("image")?.toInt() ?: 0
+
+            MemoryDetailScreen(title, desc, date, image, navController)
+        }
+    }
+}
+
+@Composable
+fun MemoryListScreen(navController: NavController) {
+
     val memories = MemorySource.dummyMemory
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    var isLoading by remember { mutableStateOf(true) }
+    var isError by remember { mutableStateOf(false) }
 
-        item {
-            Text(
-                text = "Rekomendasi",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+    val scope = rememberCoroutineScope()
 
-            Spacer(modifier = Modifier.height(8.dp))
+    LaunchedEffect(Unit) {
+        delay(1500)
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // simulasi sukses / gagal
+        isError = (0..1).random() == 0
+        isLoading = false
+    }
+
+    when {
+        isLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                items(memories) { memory ->
-                    MemoryRowItem(memory)
-                }
+                CircularProgressIndicator()
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Semua Kenangan",
-                style = MaterialTheme.typography.titleLarge
-            )
         }
 
-        items(memories) { memory ->
-            MemoryItem(memory)
+        isError -> {
+            //  TAMPILAN ERROR (INI YANG DIMINTA MODUL)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Gagal Memuat Data",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Pastikan koneksi internet Anda menyala")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    // retry
+                    isLoading = true
+                    scope.launch {
+                        delay(1500)
+                        isError = false
+                        isLoading = false
+                    }
+                }) {
+                    Text("Coba Lagi")
+                }
+            }
+        }
+
+        else -> {
+            //  TAMPILAN NORMAL (SUKSES)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .statusBarsPadding(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+
+                item {
+                    Text("Rekomendasi", style = MaterialTheme.typography.titleLarge)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(memories) {
+                            MemoryRowItem(it)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Semua Kenangan", style = MaterialTheme.typography.titleLarge)
+                }
+
+                items(memories) {
+                    MemoryItem(it, navController)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun MemoryItem(memory: Memory) {
+fun MemoryItem(memory: Memory, navController: NavController) {
 
     var isFavorite by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Box {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(6.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column {
 
                 Box {
                     Image(
-                        painter = painterResource(id = memory.imageRes),
+                        painter = painterResource(memory.imageRes),
                         contentDescription = memory.title,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -121,16 +189,14 @@ fun MemoryItem(memory: Memory) {
 
                     IconButton(
                         onClick = { isFavorite = !isFavorite },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
+                        modifier = Modifier.align(Alignment.TopEnd)
                     ) {
                         Icon(
                             imageVector = if (isFavorite)
                                 Icons.Filled.Favorite
                             else
                                 Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
+                            contentDescription = null,
                             tint = if (isFavorite) Color.Red else Color.White
                         )
                     }
@@ -145,13 +211,21 @@ fun MemoryItem(memory: Memory) {
 
                     Button(
                         onClick = {
-                            coroutineScope.launch {
+                            scope.launch {
                                 isLoading = true
-                                delay(2000)
+                                delay(1000)
 
-                                snackbarHostState.showSnackbar(
-                                    "Kenangan '${memory.title}' berhasil dibuka!"
-                                )
+                                val isError = (0..1).random() == 0
+
+                                if (isError) {
+                                    snackbarHostState.showSnackbar("Gagal membuka data ❌")
+                                } else {
+                                    snackbarHostState.showSnackbar("Berhasil membuka ${memory.title} ✅")
+
+                                    navController.navigate(
+                                        "detail/${memory.title}/${memory.description}/${memory.date}/${memory.imageRes}"
+                                    )
+                                }
 
                                 isLoading = false
                             }
@@ -159,15 +233,13 @@ fun MemoryItem(memory: Memory) {
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading
                     ) {
-
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Memproses...")
+                            Text("Loading...")
                         } else {
                             Text("Lihat Detail")
                         }
@@ -183,18 +255,67 @@ fun MemoryItem(memory: Memory) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MemoryDetailScreen(
+    title: String,
+    desc: String,
+    date: String,
+    image: Int,
+    navController: NavController
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Detail Kenangan") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+
+            Image(
+                painter = painterResource(image),
+                contentDescription = title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(title, fontWeight = FontWeight.Bold)
+            Text(date, color = MaterialTheme.colorScheme.primary)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(desc)
+        }
+    }
+}
+
 @Composable
 fun MemoryRowItem(memory: Memory) {
     Card(
         modifier = Modifier.width(140.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column {
             Image(
-                painter = painterResource(id = memory.imageRes),
+                painter = painterResource(memory.imageRes),
                 contentDescription = memory.title,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,26 +324,9 @@ fun MemoryRowItem(memory: Memory) {
             )
 
             Column(modifier = Modifier.padding(8.dp)) {
-
-                Text(
-                    text = memory.title,
-                    style = MaterialTheme.typography.titleSmall
-                )
-
-                Text(
-                    text = memory.date,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Text(memory.title, fontWeight = FontWeight.Bold)
+                Text(memory.date)
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewApp() {
-    PrakTAM_2417051028Theme {
-        MemoryListScreen()
     }
 }
