@@ -3,7 +3,6 @@ package com.example.praktam_2417051028
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,14 +18,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
-import androidx.navigation.compose.*
+import com.example.praktam_2417051028.data.repository.MemoryRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.praktam_2417051028.lifereplay.Memory
 import com.example.praktam_2417051028.lifereplay.MemorySource
 import com.example.praktam_2417051028.ui.theme.PrakTAM_2417051028Theme
@@ -46,8 +51,10 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "list") {
-
+    NavHost(
+        navController = navController,
+        startDestination = "list"
+    ) {
         composable("list") {
             MemoryListScreen(navController)
         }
@@ -56,7 +63,7 @@ fun AppNavigation() {
             val title = backStackEntry.arguments?.getString("title") ?: ""
             val desc = backStackEntry.arguments?.getString("desc") ?: ""
             val date = backStackEntry.arguments?.getString("date") ?: ""
-            val image = backStackEntry.arguments?.getString("image")?.toInt() ?: 0
+            val image = backStackEntry.arguments?.getString("image") ?: ""
 
             MemoryDetailScreen(title, desc, date, image, navController)
         }
@@ -66,7 +73,8 @@ fun AppNavigation() {
 @Composable
 fun MemoryListScreen(navController: NavController) {
 
-    val memories = MemorySource.dummyMemory
+    var memories by remember { mutableStateOf<List<Memory>>(emptyList()) }
+    val repository = remember { MemoryRepository() }
 
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
@@ -74,11 +82,15 @@ fun MemoryListScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        delay(1500)
-
-        // simulasi sukses / gagal
-        isError = (0..1).random() == 0
-        isLoading = false
+        try {
+            isLoading = true
+            memories = repository.getMemories()
+            isError = false
+        } catch (e: Exception) {
+            isError = true
+        } finally {
+            isLoading = false
+        }
     }
 
     when {
@@ -178,8 +190,12 @@ fun MemoryItem(memory: Memory, navController: NavController) {
             Column {
 
                 Box {
-                    Image(
-                        painter = painterResource(memory.imageRes),
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(memory.imageUrl)
+                            .decoderFactory(SvgDecoder.Factory())
+                            .crossfade(true)
+                            .build(),
                         contentDescription = memory.title,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -223,7 +239,7 @@ fun MemoryItem(memory: Memory, navController: NavController) {
                                     snackbarHostState.showSnackbar("Berhasil membuka ${memory.title} ✅")
 
                                     navController.navigate(
-                                        "detail/${memory.title}/${memory.description}/${memory.date}/${memory.imageRes}"
+                                        "detail/${memory.title}/${memory.description}/${memory.date}/${memory.imageUrl}"
                                     )
                                 }
 
@@ -261,7 +277,7 @@ fun MemoryDetailScreen(
     title: String,
     desc: String,
     date: String,
-    image: Int,
+    image: String,
     navController: NavController
 ) {
     Scaffold(
@@ -286,8 +302,12 @@ fun MemoryDetailScreen(
                 .fillMaxSize()
         ) {
 
-            Image(
-                painter = painterResource(image),
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(image)
+                    .decoderFactory(SvgDecoder.Factory())
+                    .crossfade(true)
+                    .build(),
                 contentDescription = title,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -314,8 +334,12 @@ fun MemoryRowItem(memory: Memory) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Column {
-            Image(
-                painter = painterResource(memory.imageRes),
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(memory.imageUrl)
+                    .decoderFactory(SvgDecoder.Factory())
+                    .crossfade(true)
+                    .build(),
                 contentDescription = memory.title,
                 modifier = Modifier
                     .fillMaxWidth()

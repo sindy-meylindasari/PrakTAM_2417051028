@@ -4,5 +4,5 @@ data class Memory(
     val title: String,
     val description: String,
     val date: String,
-    val imageRes: Int
+    val imageUrl: String
 )
